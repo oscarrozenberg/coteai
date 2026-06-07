@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Commander ton rapport — cote.ai</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://js.stripe.com/v3/"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0A0A0F;--surface:#13131A;--surface2:#1C1C26;--border:#2A2A38;--accent:#E8FF47;--accent2:#7B6EF6;--text:#F0F0F8;--muted:#6B6B80;--red:#FF4757;--green:#2ED573}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh}
+nav{display:flex;align-items:center;justify-content:space-between;padding:1.25rem 2rem;border-bottom:1px solid var(--border)}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:1.2rem;letter-spacing:-0.02em;text-decoration:none;color:var(--text)}.logo span{color:var(--accent)}
+.back{font-size:13px;color:var(--muted);text-decoration:none;display:flex;align-items:center;gap:6px}
+.back:hover{color:var(--text)}
+.checkout-wrap{max-width:900px;margin:3rem auto;padding:0 1.5rem;display:grid;grid-template-columns:1fr 1fr;gap:2rem}
+@media(max-width:640px){.checkout-wrap{grid-template-columns:1fr}}
+.order-summary{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:1.75rem}
+.summary-title{font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:700;margin-bottom:1.5rem}
+.vehicle-info{background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:1rem;margin-bottom:1.5rem}
+.vehicle-name{font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;margin-bottom:4px}
+.vehicle-meta{font-size:12px;color:var(--muted)}
+.included{display:flex;flex-direction:column;gap:8px;margin-bottom:1.5rem}
+.included-item{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
+.included-item::before{content:"✓";color:var(--green);font-weight:700;flex-shrink:0}
+.price-total{display:flex;justify-content:space-between;align-items:center;padding-top:1rem;border-top:1px solid var(--border)}
+.total-label{font-size:14px;color:var(--muted)}
+.total-price{font-family:'Syne',sans-serif;font-size:1.8rem;font-weight:800;color:var(--accent)}
+.payment-form{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:1.75rem}
+.form-title{font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:700;margin-bottom:1.5rem}
+.form-group{display:flex;flex-direction:column;gap:6px;margin-bottom:1rem}
+.form-group label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em}
+input[type=email],input[type=text]{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px 14px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;outline:none;width:100%;transition:border-color 0.2s}
+input:focus{border-color:var(--accent2)}
+#card-element{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px 14px}
+#card-errors{color:var(--red);font-size:12px;margin-top:6px;min-height:18px}
+.pay-btn{width:100%;background:var(--accent);color:#0A0A0F;font-family:'Syne',sans-serif;font-weight:700;font-size:15px;padding:14px;border:none;border-radius:12px;cursor:pointer;margin-top:1rem;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:8px}
+.pay-btn:hover{opacity:0.9}
+.pay-btn:disabled{opacity:0.5;cursor:not-allowed}
+.secure-badge{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:1rem;font-size:11px;color:var(--muted)}
+.spinner{width:16px;height:16px;border:2px solid rgba(10,10,15,0.3);border-top-color:#0A0A0F;border-radius:50%;animation:spin 0.8s linear infinite;display:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<nav>
+  <a href="/" class="logo">cote<span>.</span>ai</a>
+  <a href="/" class="back">← Retour</a>
+</nav>
+
+<div class="checkout-wrap">
+  <div class="order-summary">
+    <div class="summary-title">Récapitulatif de commande</div>
+    <div class="vehicle-info">
+      <div class="vehicle-name" id="vehicleName">Rapport de valeur de marché</div>
+      <div class="vehicle-meta" id="vehicleMeta">Chargement...</div>
+    </div>
+    <div class="included">
+      <div class="included-item">Valeur précise + fourchette de marché</div>
+      <div class="included-item">Historique des prix sur 12 mois</div>
+      <div class="included-item">5 annonces concurrentes analysées</div>
+      <div class="included-item">Meilleur moment pour vendre</div>
+      <div class="included-item">Conseils personnalisés de mise en valeur</div>
+      <div class="included-item">Rapport PDF téléchargeable</div>
+      <div class="included-item">Analyse rédigée par IA</div>
+    </div>
+    <div class="price-total">
+      <span class="total-label">Total</span>
+      <span class="total-price" id="totalPrice">4,99€</span>
+    </div>
+  </div>
+
+  <div class="payment-form">
+    <div class="form-title">Paiement sécurisé</div>
+    <div class="form-group">
+      <label>Email (pour recevoir le rapport)</label>
+      <input type="email" id="email" placeholder="ton@email.com">
+    </div>
+    <div class="form-group">
+      <label>Informations de carte</label>
+      <div id="card-element"></div>
+      <div id="card-errors"></div>
+    </div>
+    <button class="pay-btn" id="payBtn" onclick="payer()">
+      <span id="payLabel">Payer 4,99€ et générer mon rapport</span>
+      <div class="spinner" id="spinner"></div>
+    </button>
+    <div class="secure-badge">🔒 Paiement sécurisé par Stripe · Données chiffrées SSL</div>
+  </div>
+</div>
+
+<script>
+// Récupérer les infos véhicule
+const vehicule = JSON.parse(sessionStorage.getItem('vehicule') || '{}');
+if(vehicule.marque){
+  document.getElementById('vehicleName').textContent = `${vehicule.marque} ${vehicule.modele} ${vehicule.annee}`;
+  document.getElementById('vehicleMeta').textContent = `${vehicule.type} · ${parseInt(vehicule.km).toLocaleString('fr-FR')} km · État ${vehicule.etat} · Valeur estimée ${parseInt(vehicule.prix).toLocaleString('fr-FR')}€`;
+}
+
+// Vérifier si pack=3
+const urlParams = new URLSearchParams(window.location.search);
+const isPack = urlParams.get('pack') === '3';
+if(isPack){
+  document.getElementById('totalPrice').textContent = '9,99€';
+  document.getElementById('payLabel').textContent = 'Payer 9,99€ — Pack 3 rapports';
+}
+
+// Stripe — REMPLACE pk_test_... par ta vraie clé publique Stripe
+const stripe = Stripe('pk_test_REMPLACE_PAR_TA_CLE_PUBLIQUE_STRIPE');
+const elements = stripe.elements({
+  appearance: {
+    theme: 'night',
+    variables: {colorPrimary: '#E8FF47', colorBackground: '#0A0A0F', colorText: '#F0F0F8', colorDanger: '#FF4757', fontFamily: 'DM Sans, sans-serif', borderRadius: '10px'}
+  }
+});
+const cardElement = elements.create('card');
+cardElement.mount('#card-element');
+cardElement.on('change', e => {
+  document.getElementById('card-errors').textContent = e.error ? e.error.message : '';
+});
+
+async function payer(){
+  const email = document.getElementById('email').value;
+  if(!email || !email.includes('@')){alert('Merci d\'entrer un email valide.');return}
+  const btn = document.getElementById('payBtn');
+  btn.disabled = true;
+  document.getElementById('payLabel').style.display = 'none';
+  document.getElementById('spinner').style.display = 'block';
+
+  try {
+    // 1. Créer le PaymentIntent via ton backend
+    const res = await fetch('/api/create-payment-intent', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({amount: isPack ? 999 : 499, email, vehicule})
+    });
+    const {clientSecret} = await res.json();
+
+    // 2. Confirmer le paiement avec Stripe
+    const {error, paymentIntent} = await stripe.confirmCardPayment(clientSecret, {
+      payment_method: {card: cardElement, billing_details: {email}}
+    });
+
+    if(error){
+      document.getElementById('card-errors').textContent = error.message;
+      btn.disabled = false;
+      document.getElementById('payLabel').style.display = 'block';
+      document.getElementById('spinner').style.display = 'none';
+    } else if(paymentIntent.status === 'succeeded'){
+      // Rediriger vers la page rapport
+      sessionStorage.setItem('paid', '1');
+      window.location.href = '/rapport?id=' + paymentIntent.id;
+    }
+  } catch(err){
+    document.getElementById('card-errors').textContent = 'Erreur de connexion. Réessaie.';
+    btn.disabled = false;
+    document.getElementById('payLabel').style.display = 'block';
+    document.getElementById('spinner').style.display = 'none';
+  }
+}
+</script>
+</body>
+</html>

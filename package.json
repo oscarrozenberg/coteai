@@ -1,0 +1,8 @@
+{
+  "name": "coteai",
+  "version": "1.0.0",
+  "description": "Estimation de la valeur de marché de véhicules par IA",
+  "dependencies": {
+    "stripe": "^14.0.0"
+  }
+}
